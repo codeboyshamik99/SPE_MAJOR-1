@@ -1,0 +1,30 @@
+---
+- name: Run Docker Compose
+  hosts: localhost
+  gather_facts: false
+
+  vars:
+    compose_src: "/mnt/c/Users/DELL/Desktop/Misc/SPE_Major/docker-compose.yaml"
+    compose_dest: "/mnt/c/Users/DELL/Desktop/Misc/SPE_Major/docker-compose.yaml"
+
+  tasks:
+    - name: Copy Docker Compose file
+      copy:
+        src: "{{ compose_src }}"
+        dest: "{{ compose_dest }}"
+
+    - name: Ensure Docker Compose is installed
+      command: "which docker-compose"
+      register: docker_compose_location
+      ignore_errors: yes
+
+    - name: Install Docker Compose if not installed
+      command: >
+        curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" \
+        -o /usr/local/bin/docker-compose && chmod +x /usr/local/bin/docker-compose
+      when: docker_compose_location.rc != 0
+
+
+    - name: Run Docker Compose
+      command: docker-compose -f "{{ compose_dest }}" up -d
+

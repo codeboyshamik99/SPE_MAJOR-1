@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+
+  mysql:
+    image: mysql
+    container_name: mysqlcontainer5
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: ems
+    ports:
+      - "3311:3306"
+    networks:
+      - networkmysql3
+
+  frontend:
+    image: spe_major-frontend:latest
+    ports:
+      - "3000:3000"
+    networks:
+      - networkmysql3
+
+  backend:
+    image: spe_major-backend 
+    ports:
+      - "8090:8080"
+    networks:
+      - networkmysql3
+    environment:
+      - MYSQL_HOST=mysqlcontainer5
+      - MYSQL_PORT=3306
+      - MYSQL_DB_NAME=ems
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=root
+
+networks:
+  networkmysql3:
+    driver: bridge
+
