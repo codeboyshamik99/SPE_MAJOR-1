@@ -14,8 +14,8 @@
 	<name>ems-backend</name>
 	<description>Demo project for Spring Boot Employee Management System</description>
 	<properties>
-		<java.version>11</java.version>
-		<maven.compiler.release>11</maven.compiler.release>
+		<java.version>11.0.0.1</java.version>
+		<maven.compiler.release>11.0.0.1</maven.compiler.release>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -68,8 +68,8 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.11.0</version>
 				<configuration>
-					<source>21</source>
-					<target>21</target> 
+					<source>11.0.0.1</source>
+					<target>11.0.0.1</target> 
 					<compilerId>eclipse</compilerId>
 				</configuration>
 			</plugin>
