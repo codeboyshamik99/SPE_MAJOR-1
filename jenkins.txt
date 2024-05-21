@@ -1,0 +1,80 @@
+pipeline {
+    agent any
+    stages {
+        stage('Stage 1: Git Clone') {
+            steps {
+                git branch: 'main', url: 'https://github.com/codeboyshamik99/SPE_MAJOR-1.git'
+            }
+        }
+        stage('Stage 2: Prepare Test Directory') {
+    steps {
+                script {
+                    dir('Backend/ems-backend/ems-backend') {
+                        sh "sudo chmod +x src/test/java/net/spemajor/ems/*"
+                        
+                    }
+                }
+
+        }
+    }
+    
+        stage('Stage 3: Run Tests') {
+            steps {
+                script {
+                    dir('Backend/ems-backend/ems-backend') {
+                        sh 'mvn -Dtest=net.spemajor.ems.EmployeeControllerTest test'
+                        sh 'mvn -Dtest=net.spemajor.ems.DepartmentControllerTest test'
+                    }
+                }
+            }
+        }
+        stage('Stage 4:Prepare Environment') {
+            steps {
+                sh 'chmod -R +r Frontend/spemajor Backend/ems-backend/ems-backend'
+                sh 'ls -l Frontend/spemajor'
+                sh 'ls -l Backend/ems-backend/ems-backend'
+            }
+        }
+        stage('Stage 5:Build Frontend Image') {
+            steps {
+                sh 'sudo docker build -t spe_major-frontend:latest Frontend/spemajor'
+            }
+        }
+        stage('Stage 6:Build Backend Image'){
+            steps{
+                sh 'sudo docker build -t spe_major-backend:latest Backend/ems-backend/ems-backend'
+            }
+        }
+        stage('Stage 7: Push image to DockerHub') {
+            steps {
+                script {
+                        sh "docker login --username shamik99 --password sachin123"
+                        sh 'docker push  shamik99/spe_major-frontend:latest'
+                        sh "docker push shamik99/spe_major-backend:latest"
+                    
+                }
+            }
+        }
+        
+         stage('Stage 8: Clean Docker Images') {
+            steps {
+                script {
+                    sh 'docker container prune -f'
+                    sh 'docker image prune -f'
+                }
+            }
+        }
+        
+        stage('Stage 9: Ansible Deployment') {
+            steps {
+                script { 
+                    sh 'ansible-playbook -i inventory.yaml  docker-compose-ansible.yaml'
+                }
+            }
+        }
+
+       
+
+
+    }
+}
