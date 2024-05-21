@@ -1,138 +1,98 @@
 package net.spemajor.ems;
+
 import net.spemajor.ems.controller.DepartmentController;
 import net.spemajor.ems.dto.DepartmentDto;
 import net.spemajor.ems.service.DepartmentService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.BeforeAll;
-import org.slf4j.LoggerFactory;
-import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.Logger;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 
 import java.util.Arrays;
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-
-@WebMvcTest(DepartmentController.class)
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.*;
 
 public class DepartmentControllerTest {
-    @Autowired
-    private MockMvc mockMvc;
 
-    @MockBean
+    @Mock
     private DepartmentService departmentService;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    @InjectMocks
+    private DepartmentController departmentController;
 
-     @BeforeAll
-    public static void setUp() {
-        Logger root = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-        root.setLevel(Level.OFF);
-    }
-    
-
-    @Test
-    public void testCreateDepartment() throws Exception {
-        DepartmentDto departmentDto = new DepartmentDto();
-        departmentDto.setDepartmentName("IT");
-        departmentDto.setDepartmentDescription("Information Technology");
-
-        DepartmentDto createdDepartment = new DepartmentDto();
-        createdDepartment.setId(1L);
-        createdDepartment.setDepartmentName("IT");
-        createdDepartment.setDepartmentDescription("Information Technology");
-
-        Mockito.when(departmentService.createDepartment(any(DepartmentDto.class))).thenReturn(createdDepartment);
-
-        mockMvc.perform(post("/api/departments")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(departmentDto)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value(1L))
-                .andExpect(jsonPath("$.departmentName").value("IT"))
-                .andExpect(jsonPath("$.departmentDescription").value("Information Technology"));
+    @BeforeEach
+    public void setUp() {
+        MockitoAnnotations.initMocks(this);
     }
 
     @Test
-    public void testGetDepartmentById() throws Exception {
-        DepartmentDto departmentDto = new DepartmentDto();
-        departmentDto.setId(1L);
-        departmentDto.setDepartmentName("IT");
-        departmentDto.setDepartmentDescription("Information Technology");
+    public void testCreateDepartment() {
+        DepartmentDto departmentDto = new DepartmentDto(1L, "IT", "Information Technology");
+        when(departmentService.createDepartment(any(DepartmentDto.class))).thenReturn(departmentDto);
 
-        Mockito.when(departmentService.getDepartment(1L)).thenReturn(departmentDto);
+        ResponseEntity<DepartmentDto> response = departmentController.createDepartment(departmentDto);
 
-        mockMvc.perform(get("/api/departments/1"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(1L))
-                .andExpect(jsonPath("$.departmentName").value("IT"))
-                .andExpect(jsonPath("$.departmentDescription").value("Information Technology"));
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        assertEquals(departmentDto, response.getBody());
+        verify(departmentService, times(1)).createDepartment(any(DepartmentDto.class));
     }
 
     @Test
-    public void testGetAllDepartments() throws Exception {
-        DepartmentDto department1 = new DepartmentDto();
-        department1.setId(1L);
-        department1.setDepartmentName("IT");
-        department1.setDepartmentDescription("Information Technology");
+    public void testGetDepartmentById() {
+        Long departmentId = 1L;
+        DepartmentDto departmentDto = new DepartmentDto(departmentId, "IT", "Information Technology");
+        when(departmentService.getDepartment(departmentId)).thenReturn(departmentDto);
 
-        DepartmentDto department2 = new DepartmentDto();
-        department2.setId(2L);
-        department2.setDepartmentName("HR");
-        department2.setDepartmentDescription("Human Resources");
+        ResponseEntity<DepartmentDto> response = departmentController.getDepartmentById(departmentId);
 
-        List<DepartmentDto> departments = Arrays.asList(department1, department2);
-
-        Mockito.when(departmentService.getAllDepartments()).thenReturn(departments);
-
-        mockMvc.perform(get("/api/departments"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.size()").value(2))
-                .andExpect(jsonPath("$[0].id").value(1L))
-                .andExpect(jsonPath("$[0].departmentName").value("IT"))
-                .andExpect(jsonPath("$[0].departmentDescription").value("Information Technology"))
-                .andExpect(jsonPath("$[1].id").value(2L))
-                .andExpect(jsonPath("$[1].departmentName").value("HR"))
-                .andExpect(jsonPath("$[1].departmentDescription").value("Human Resources"));
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(departmentDto, response.getBody());
+        verify(departmentService, times(1)).getDepartment(departmentId);
     }
 
     @Test
-    public void testUpdateDepartment() throws Exception {
-        DepartmentDto updatedDepartment = new DepartmentDto();
-        updatedDepartment.setId(1L);
-        updatedDepartment.setDepartmentName("IT Updated");
-        updatedDepartment.setDepartmentDescription("Information Technology Updated");
+    public void testGetAllDepartments() {
+        List<DepartmentDto> departments = Arrays.asList(
+                new DepartmentDto(1L, "IT", "Information Technology"),
+                new DepartmentDto(2L, "HR", "Human Resources")
+        );
+        when(departmentService.getAllDepartments()).thenReturn(departments);
 
-        Mockito.when(departmentService.updateDepartment(eq(1L), any(DepartmentDto.class))).thenReturn(updatedDepartment);
+        ResponseEntity<List<DepartmentDto>> response = departmentController.getAllDepartments();
 
-        mockMvc.perform(put("/api/departments/1")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(updatedDepartment)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(1L))
-                .andExpect(jsonPath("$.departmentName").value("IT Updated"))
-                .andExpect(jsonPath("$.departmentDescription").value("Information Technology Updated"));
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(departments, response.getBody());
+        verify(departmentService, times(1)).getAllDepartments();
     }
 
     @Test
-    public void testDeleteDepartment() throws Exception {
-        Mockito.doNothing().when(departmentService).deleteDepartment(1L);
+    public void testUpdateDepartment() {
+        Long departmentId = 1L;
+        DepartmentDto updatedDepartmentDto = new DepartmentDto(departmentId, "IT Updated", "Information Technology Updated");
+        when(departmentService.updateDepartment(eq(departmentId), any(DepartmentDto.class))).thenReturn(updatedDepartmentDto);
 
-        mockMvc.perform(delete("/api/departments/1"))
-                .andExpect(status().isOk())
-                .andExpect(content().string("Department deleted successfully!!!"));
+        ResponseEntity<DepartmentDto> response = departmentController.updateDepartment(departmentId, updatedDepartmentDto);
 
-        Mockito.verify(departmentService, Mockito.times(1)).deleteDepartment(1L);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(updatedDepartmentDto, response.getBody());
+        verify(departmentService, times(1)).updateDepartment(eq(departmentId), any(DepartmentDto.class));
     }
+
+    @Test
+    public void testDeleteDepartment() {
+        Long departmentId = 1L;
+
+        ResponseEntity<String> response = departmentController.deleteDepartment(departmentId, "1");
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals("Department deleted successfully!!!", response.getBody());
+        verify(departmentService, times(1)).deleteDepartment(departmentId);
+    }
+
+
 }
