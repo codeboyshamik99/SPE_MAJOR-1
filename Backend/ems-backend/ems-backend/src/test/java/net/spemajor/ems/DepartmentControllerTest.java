@@ -10,6 +10,10 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeAll;
+import org.slf4j.LoggerFactory;
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
 
 import java.util.Arrays;
 import java.util.List;
@@ -30,6 +34,13 @@ public class DepartmentControllerTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+     @BeforeAll
+    public static void setUp() {
+        Logger root = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
+        root.setLevel(Level.OFF);
+    }
+    
 
     @Test
     public void testCreateDepartment() throws Exception {
